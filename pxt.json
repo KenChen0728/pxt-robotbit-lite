@@ -1,13 +1,10 @@
 {
     "name": "robotbit",
-    "version": "0.4.8",
-    "description": "Extension for Kittenbot Robotbit",
+    "version": "0.5.0",
+    "description": "Kittenbot Robotbit 課堂精簡版（馬達、9g 舵機、RGB 燈），修改自 KittenBot pxt-robotbit",
     "license": "MIT",
     "dependencies": {
-        "core": "*",
-        "neopixel": "github:kittenbot/pxt-neopixel",
-        "SensorPlus": "github:kittenbothk/pxt-moduleplus",
-        "microphone": "*"
+        "core": "*"
     },
     "files": [
         "README.md",
@@ -18,7 +15,6 @@
     "testFiles": [
         "test.ts"
     ],
-    "public": true,
     "targetVersions": {
         "target": "8.0.13",
         "targetId": "microbit"

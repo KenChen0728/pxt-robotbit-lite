@@ -6,6 +6,26 @@ load dependency
 */
 
 
+/**
+ * RGB 燈顏色
+ */
+enum RgbColors {
+    //% block=red
+    Red = 0xFF0000,
+    //% block=orange
+    Orange = 0xFF8000,
+    //% block=yellow
+    Yellow = 0xFFFF00,
+    //% block=green
+    Green = 0x00FF00,
+    //% block=blue
+    Blue = 0x0000FF,
+    //% block=purple
+    Purple = 0xFF00FF,
+    //% block=white
+    White = 0xFFFFFF
+}
+
 //% color="#31C7D5" weight=10 icon="\uf1d0"
 namespace robotbit {
     const PCA9685_ADDRESS = 0x40
@@ -100,7 +120,6 @@ namespace robotbit {
 
     let initialized = false
     let initializedMatrix = false
-    let neoStrip: neopixel.Strip;
     let matBuf = pins.createBuffer(17);
     let distanceBuf = 0;
 
@@ -210,17 +229,82 @@ namespace robotbit {
     }
 
 
-    /**
-     * Init RGB pixels mounted on robotbit
-     */
-    //% blockId="robotbit_rgb" block="RGB"
-    //% weight=70
-    export function rgb(): neopixel.Strip {
-        if (!neoStrip) {
-            neoStrip = neopixel.create(DigitalPin.P16, 4, NeoPixelMode.RGB)
-        }
+    // ===== RGB 燈（精簡版：不依賴 neopixel 擴充，直接用 micro:bit 內建的 WS2812 送訊號）=====
+    const RGB_PIN = DigitalPin.P16
+    const RGB_COUNT = 4
+    let rgbBuf: Buffer = null
+    let rgbBrightness = 80
 
-        return neoStrip;
+    function rgbShow(): void {
+        if (!rgbBuf) rgbBuf = pins.createBuffer(RGB_COUNT * 3)
+        light.sendWS2812BufferWithBrightness(rgbBuf, RGB_PIN, rgbBrightness)
+    }
+
+    function rgbSet(index: number, color: number): void {
+        if (!rgbBuf) rgbBuf = pins.createBuffer(RGB_COUNT * 3)
+        if (index < 0 || index >= RGB_COUNT) return
+        // WS2812 為 GRB 順序
+        rgbBuf[index * 3 + 0] = (color >> 8) & 0xff
+        rgbBuf[index * 3 + 1] = (color >> 16) & 0xff
+        rgbBuf[index * 3 + 2] = color & 0xff
+    }
+
+    /**
+     * 板子上 4 顆 RGB 燈全部亮同一個顏色
+     * @param color 顏色
+     */
+    //% blockId=robotbit_lite_rgb_all block="RGB all on|color %color"
+    //% group="RGB" weight=49
+    export function rgbAllOn(color: RgbColors): void {
+        for (let i = 0; i < RGB_COUNT; i++) rgbSet(i, color)
+        rgbShow()
+    }
+
+    /**
+     * 點亮第幾顆燈（1~4），其他燈維持原狀
+     * @param index 第幾顆燈，1~4; eg: 1
+     * @param color 顏色
+     */
+    //% blockId=robotbit_lite_rgb_one block="RGB light No. %index|color %color"
+    //% group="RGB" weight=48
+    //% index.min=1 index.max=4 index.defl=1
+    export function rgbOne(index: number, color: RgbColors): void {
+        rgbSet(index - 1, color)
+        rgbShow()
+    }
+
+    /**
+     * 從第 1 顆開始亮幾顆燈（0~4），其餘關掉
+     * @param count 亮幾顆，0~4; eg: 2
+     * @param color 顏色
+     */
+    //% blockId=robotbit_lite_rgb_count block="RGB light %count|LEDs color %color"
+    //% group="RGB" weight=47
+    //% count.min=0 count.max=4 count.defl=2
+    export function rgbCount(count: number, color: RgbColors): void {
+        for (let i = 0; i < RGB_COUNT; i++) rgbSet(i, i < count ? color : 0)
+        rgbShow()
+    }
+
+    /**
+     * 關掉全部 RGB 燈
+     */
+    //% blockId=robotbit_lite_rgb_off block="RGB all off"
+    //% group="RGB" weight=46
+    export function rgbOff(): void {
+        for (let i = 0; i < RGB_COUNT; i++) rgbSet(i, 0)
+        rgbShow()
+    }
+
+    /**
+     * 設定 RGB 燈亮度（0~255），下一次亮燈時生效
+     * @param brightness 亮度; eg: 80
+     */
+    //% blockId=robotbit_lite_rgb_brightness block="RGB brightness %brightness"
+    //% group="RGB" weight=45
+    //% brightness.min=0 brightness.max=255 brightness.defl=80
+    export function rgbSetBrightness(brightness: number): void {
+        rgbBrightness = Math.max(0, Math.min(255, brightness))
     }
 
     /**
@@ -251,6 +335,7 @@ namespace robotbit {
     ///% group="Servo" weight=61
     //% degree.min=-45 degree.max=225
     //% name.fieldEditor="gridpicker" name.fieldOptions.columns=4
+    //% blockHidden=true
     export function GeekServo(index: Servos, degree: number): void {
         if (!initialized) {
             initPCA9685()
@@ -271,6 +356,7 @@ namespace robotbit {
     //% blockGap=50
     //% degree.min=0 degree.max=360
     //% name.fieldEditor="gridpicker" name.fieldOptions.columns=4
+    //% blockHidden=true
     export function GeekServo2KG(index: Servos, degree: number): void {
         if (!initialized) {
             initPCA9685()
@@ -291,6 +377,7 @@ namespace robotbit {
     //% group="Servo" weight=59
     //% degree.min=0 degree.max=360
     //% name.fieldEditor="gridpicker" name.fieldOptions.columns=4
+    //% blockHidden=true
     export function GeekServo5KG(index: Servos, degree: number): void {
         if (!initialized) {
             initPCA9685()
@@ -309,6 +396,7 @@ namespace robotbit {
     //% group="Servo" weight=58
     //% speed.min=-255 speed.max=255
     //% name.fieldEditor="gridpicker" name.fieldOptions.columns=4
+    //% blockHidden=true
     export function GeekServo5KG_Motor(index: Servos, speed: number): void {
         if (!initialized) {
             initPCA9685();
@@ -335,6 +423,7 @@ namespace robotbit {
 
     //% blockId=robotbit_stepper_degree block="Stepper 28BYJ-48|%index|degree %degree"
     //% group="Motor" weight=54
+    //% blockHidden=true
     export function StepperDegree(index: Steppers, degree: number): void {
         if (!initialized) {
             initPCA9685()
@@ -348,6 +437,7 @@ namespace robotbit {
 
     //% blockId=robotbit_stepper_turn block="Stepper 28BYJ-48|%index|turn %turn"
     //% group="Motor" weight=53
+    //% blockHidden=true
     export function StepperTurn(index: Steppers, turn: Turns): void {
         let degree = turn;
         StepperDegree(index, degree);
@@ -355,6 +445,7 @@ namespace robotbit {
 
     //% blockId=robotbit_stepper_dual block="Dual Stepper(Degree) |M1 %degree1| M2 %degree2"
     //% group="Motor" weight=52
+    //% blockHidden=true
     export function StepperDual(degree1: number, degree2: number): void {
         if (!initialized) {
             initPCA9685()
@@ -382,6 +473,7 @@ namespace robotbit {
     */
     //% blockId=robotbit_stpcar_move block="Car Forward|Distance(cm) %distance|Wheel Diameter(mm) %diameter"
     //% group="Motor" weight=51
+    //% blockHidden=true
     export function StpCarMove(distance: number, diameter: number): void {
         if (!initialized) {
             initPCA9685()
@@ -403,6 +495,7 @@ namespace robotbit {
     //% blockId=robotbit_stpcar_turn block="Car Turn|Degree %turn|Wheel Diameter(mm) %diameter|Track(mm) %track"
     //% group="Motor" weight=50
     //% blockGap=50
+    //% blockHidden=true
     export function StpCarTurn(turn: number, diameter: number, track: number): void {
         if (!initialized) {
             initPCA9685()
@@ -471,6 +564,7 @@ namespace robotbit {
     //% group="Motor" weight=57
     //% speed.min=-255 speed.max=255
     //% name.fieldEditor="gridpicker" name.fieldOptions.columns=4
+    //% blockHidden=true
     export function MotorRunDelay(index: Motors, speed: number, delay: number): void {
         MotorRun(index, speed);
         basic.pause(delay * 1000);
@@ -499,6 +593,7 @@ namespace robotbit {
 
     //% blockId=robotbit_matrix_draw block="Matrix Draw|X %x|Y %y"
     //% group="Modules" weight=44
+    //% blockHidden=true
     export function MatrixDraw(x: number, y: number): void {
         if (!initializedMatrix) {
             matrixInit();
@@ -516,6 +611,7 @@ namespace robotbit {
 
     //% blockId=robotbit_matrix_refresh block="Matrix Refresh"
     //% group="Modules" weight=43
+    //% blockHidden=true
     export function MatrixRefresh(): void {
         if (!initializedMatrix) {
             matrixInit();
@@ -527,6 +623,7 @@ namespace robotbit {
 	/*
     //% blockId=robotbit_matrix_clean block="Matrix Clean|X %x|Y %y"
     //% group="Servo" weight=68
+    //% blockHidden=true
     export function MatrixClean(x: number, y: number): void {
         if (!initializedMatrix) {
             matrixInit();
@@ -542,6 +639,7 @@ namespace robotbit {
     //% blockId=robotbit_matrix_clear block="Matrix Clear"
     //% group="Modules" weight=42
     //% blockGap=50
+    //% blockHidden=true
     export function MatrixClear(): void {
         if (!initializedMatrix) {
             matrixInit();
@@ -559,6 +657,7 @@ namespace robotbit {
      */
     //% blockId=robotbit_rgbultrasonic block="Ultrasonic(with RGB)|pin %pin"
     //% group="Modules" weight=41
+    //% blockHidden=true
     export function RgbUltrasonic(pin: DigitalPin): number {
         pins.setPull(pin, PinPullMode.PullNone);
         pins.digitalWritePin(pin, 0);
@@ -586,6 +685,7 @@ namespace robotbit {
      */
     //% blockId=robotbit_holeultrasonicver block="Ultrasonic(with LEGO Hole)|pin %pin|unit %unit"
     //% group="Modules" weight=40
+    //% blockHidden=true
     export function HoleUltrasonic(pin: DigitalPin, unit: ValueUnit): number {
         pins.setPull(pin, PinPullMode.PullNone);
         // pins.setPull(pin, PinPullMode.PullDown);

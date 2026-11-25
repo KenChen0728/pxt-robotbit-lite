@@ -20,11 +20,22 @@
     "robotbit.MatrixDraw|block": "LED矩阵 描点|X %x|Y %y",
     "robotbit.MatrixClear|block": "清空 LED矩阵 ",
     "robotbit.MatrixRefresh|block": "刷新 LED矩阵 ",
-
     "robotbit.ValueUnit.Millimeter|block": "毫米",
     "robotbit.ValueUnit.Centimeters|block": "厘米",
-
     "{id:group}Servo": "舵机",
     "{id:group}Motor": "电机/步进电机",
-    "{id:group}Modules": "外接模块"
+    "{id:group}Modules": "外接模块",
+    "robotbit.rgbAllOn|block": "RGB 全部亮|颜色 %color",
+    "robotbit.rgbOne|block": "RGB 第 %index 颗灯亮|颜色 %color",
+    "robotbit.rgbCount|block": "RGB 亮 %count 颗灯|颜色 %color",
+    "robotbit.rgbOff|block": "RGB 全部关灯",
+    "robotbit.rgbSetBrightness|block": "RGB 亮度设为 %brightness",
+    "RgbColors.Red|block": "红",
+    "RgbColors.Orange|block": "橙",
+    "RgbColors.Yellow|block": "黄",
+    "RgbColors.Green|block": "绿",
+    "RgbColors.Blue|block": "蓝",
+    "RgbColors.Purple|block": "紫",
+    "RgbColors.White|block": "白",
+    "{id:group}RGB": "RGB 灯"
 }
